@@ -19,8 +19,8 @@ app = FastAPI()
 # CONFIG (IMPORTANT)
 # ---------------------------
 # 👉 CHANGE THIS to your machine IP
-RP_ID = "10.33.22.35"
-ORIGIN = f"http://{RP_ID}:8000"
+RP_ID = "webauthn-test-v9su.onrender.com"
+ORIGIN = f"https://{RP_ID}"
 
 # ---------------------------
 # In-memory storage (PoC only)
