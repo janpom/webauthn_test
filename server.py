@@ -2,6 +2,7 @@ import json
 
 from fastapi import FastAPI
 from pydantic import BaseModel
+from starlette.responses import JSONResponse
 from webauthn import (
     generate_registration_options,
     verify_registration_response,
@@ -152,3 +153,19 @@ def auth_verify(req: CredentialResponse):
     cred["sign_count"] = verification.new_sign_count
 
     return {"status": "ok"}
+
+
+@app.get("/.well-known/assetlinks.json")
+def assetlinks():
+    return JSONResponse([
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.nexusgroup.personal.sample",
+                "sha256_cert_fingerprints": [
+                    "F0:91:76:BC:A6:5F:73:3D:1F:82:86:59:F2:CB:0E:B0:58:8F:FF:1B:27:9E:03:D9:39:A7:6C:11:BC:C7:A7:9C"
+                ]
+            }
+        }
+    ])
