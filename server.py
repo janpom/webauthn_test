@@ -1,3 +1,4 @@
+import base64
 import json
 
 from fastapi import FastAPI
@@ -159,6 +160,25 @@ def auth_verify(req: CredentialResponse):
     return {"status": "ok"}
 
 
+@app.get("/")
+def home():
+    user_list = []
+
+    for username, user in users.items():
+        for cred in user.get("credentials", []):
+            user_list.append({
+                "username": username,
+                "credential_id": b64url(cred["credential_id"])
+            })
+
+    revision = os.getenv("RENDER_GIT_COMMIT", "unknown")
+
+    return {
+        "revision": revision,
+        "users": user_list
+    }
+
+
 @app.get("/.well-known/assetlinks.json")
 def assetlinks():
     return JSONResponse([
@@ -173,3 +193,7 @@ def assetlinks():
             }
         }
     ])
+
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
