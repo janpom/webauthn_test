@@ -133,6 +133,7 @@ def register_options(req: UsernameRequest):
 # REGISTER VERIFY
 # ---------------------------
 @app.post("/register/verify")
+@log_endpoint("/register/verify")
 def register_verify(req: CredentialResponse):
     username = "testuser123"  # PoC simplification
 
@@ -160,6 +161,7 @@ def register_verify(req: CredentialResponse):
 # AUTH OPTIONS
 # ---------------------------
 @app.post("/auth/options")
+@log_endpoint("/auth/options")
 def auth_options(req: UsernameRequest):
     username = req.username
 
@@ -186,6 +188,7 @@ def auth_options(req: UsernameRequest):
 # AUTH VERIFY
 # ---------------------------
 @app.post("/auth/verify")
+@log_endpoint("/auth/verify")
 def auth_verify(req: CredentialResponse):
     username = "testuser123"
 
@@ -251,6 +254,7 @@ def get_log():
 
 
 @app.get("/.well-known/assetlinks.json")
+@log_endpoint("/.well-known/assetlinks.json")
 def assetlinks():
     return JSONResponse([
         {
