@@ -1,19 +1,16 @@
 import base64
 import json
+import os
+from datetime import datetime
+from functools import wraps
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from starlette.responses import JSONResponse
-from webauthn import (
-    generate_registration_options,
-    verify_registration_response,
-    generate_authentication_options,
-    verify_authentication_response,
-)
+from starlette.responses import JSONResponse, PlainTextResponse
+from webauthn import (generate_authentication_options, generate_registration_options, verify_authentication_response,
+    verify_registration_response)
 from webauthn.helpers import options_to_json
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor
-
-import os
 
 app = FastAPI()
 
@@ -34,6 +31,9 @@ EXPECTED_CLIENT_ORIGINS = [
 users = {}
 challenges = {}
 
+LOG_ENTRIES = []
+MAX_LOG_ENTRIES = 200
+
 # ---------------------------
 # Models
 # ---------------------------
@@ -48,10 +48,63 @@ class CredentialResponse(BaseModel):
     response: dict
 
 
+def log_endpoint(endpoint_name: str):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Extract request data (best effort)
+            request_data = None
+
+            # --- Extract request data ---
+            request_data = None
+
+            for arg in args:
+                if hasattr(arg, "dict"):
+                    request_data = arg.dict()
+                    break
+
+            if request_data is None:
+                for value in kwargs.values():
+                    if hasattr(value, "dict"):
+                        request_data = value.dict()
+                        break
+
+            # Call actual endpoint
+            response = func(*args, **kwargs)
+
+            # Normalize response (dict or JSONResponse)
+            if hasattr(response, "body"):
+                try:
+                    response_data = json.loads(response.body)
+                except Exception:
+                    response_data = str(response.body)
+            else:
+                response_data = response
+
+            # Log entry
+            entry = {
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "endpoint": endpoint_name,
+                "request": request_data,
+                "response": response_data,
+            }
+
+            LOG_ENTRIES.append(entry)
+
+            if len(LOG_ENTRIES) > MAX_LOG_ENTRIES:
+                LOG_ENTRIES.pop(0)
+
+            return response
+
+        return wrapper
+    return decorator
+
+
 # ---------------------------
 # REGISTER OPTIONS
 # ---------------------------
 @app.post("/register/options")
+@log_endpoint("/register/options")
 def register_options(req: UsernameRequest):
     username = req.username
 
@@ -177,6 +230,24 @@ def home():
         "revision": revision,
         "users": user_list
     }
+
+
+@app.get("/log", response_class=PlainTextResponse)
+def get_log():
+    lines = []
+
+    for entry in reversed(LOG_ENTRIES):
+        lines.append(f"[{entry['timestamp']}] {entry['endpoint']}")
+
+        lines.append("REQUEST:")
+        lines.append(json.dumps(entry["request"], indent=2))
+
+        lines.append("RESPONSE:")
+        lines.append(json.dumps(entry["response"], indent=2))
+
+        lines.append("-" * 80)
+
+    return "\n".join(lines)
 
 
 @app.get("/.well-known/assetlinks.json")
