@@ -22,6 +22,10 @@ app = FastAPI()
 # 👉 CHANGE THIS to your machine IP
 RP_ID = "webauthn-test-v9su.onrender.com"
 ORIGIN = f"https://{RP_ID}"
+EXPECTED_CLIENT_ORIGINS = [
+    ORIGIN,
+    "android:apk-key-hash:8JF2vKZfcz0fgoZZ8ssOsFiP_xsnngPZOadsEbzHp5w",
+]
 
 # ---------------------------
 # In-memory storage (PoC only)
@@ -85,7 +89,7 @@ def register_verify(req: CredentialResponse):
     verification = verify_registration_response(
         credential=req.dict(),
         expected_challenge=expected_challenge,
-        expected_origin=ORIGIN,
+        expected_origin=EXPECTED_CLIENT_ORIGINS,
         expected_rp_id=RP_ID,
     )
 
@@ -144,7 +148,7 @@ def auth_verify(req: CredentialResponse):
     verification = verify_authentication_response(
         credential=req.dict(),
         expected_challenge=expected_challenge,
-        expected_origin=ORIGIN,
+        expected_origin=EXPECTED_CLIENT_ORIGINS,
         expected_rp_id=RP_ID,
         credential_public_key=cred["public_key"],
         credential_current_sign_count=cred["sign_count"],
