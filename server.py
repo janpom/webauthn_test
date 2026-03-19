@@ -236,7 +236,7 @@ def home():
     for username, user in users.items():
         user_list.append({
             "username": username,
-            "credential_ids": list(map(b64url, [c["credential_ids"] for c in user.get("credentials", [])]))
+            "credential_ids": list(map(b64url, [c["credential_id"] for c in user.get("credentials", [])]))
         })
 
     revision = os.getenv("RENDER_GIT_COMMIT", "unknown")
