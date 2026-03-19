@@ -52,10 +52,6 @@ def log_endpoint(endpoint_name: str):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Extract request data (best effort)
-            request_data = None
-
-            # --- Extract request data ---
             request_data = None
 
             for arg in args:
@@ -135,15 +131,25 @@ def register_options(req: UsernameRequest):
 @app.post("/register/verify")
 @log_endpoint("/register/verify")
 def register_verify(req: CredentialResponse):
-    username = "testuser123"  # PoC simplification
+    client_data = json.loads(
+        b64url_decode(req.response.get("clientDataJSON"))
+    )
 
-    print("REGISTER VERIFY INPUT:", req.dict())
+    challenge = b64url_decode(client_data["challenge"])
 
-    expected_challenge = challenges.get(username)
+    username = None
+
+    for u, ch in challenges.items():
+        if ch == challenge:
+            username = u
+            break
+
+    if not username:
+        return {"error": "Unknown challenge"}
 
     verification = verify_registration_response(
         credential=req.dict(),
-        expected_challenge=expected_challenge,
+        expected_challenge=challenge,
         expected_origin=EXPECTED_CLIENT_ORIGINS,
         expected_rp_id=RP_ID,
     )
@@ -190,17 +196,24 @@ def auth_options(req: UsernameRequest):
 @app.post("/auth/verify")
 @log_endpoint("/auth/verify")
 def auth_verify(req: CredentialResponse):
-    username = "testuser123"
+    credential_id = b64url_decode(req.id)
 
-    print("AUTH VERIFY INPUT:", req.dict())
+    username = None
+    cred = None
+
+    for u, user in users.items():
+        for c in user["credentials"]:
+            if c["credential_id"] == credential_id:
+                username = u
+                cred = c
+                break
+        if cred:
+            break
+
+    if not cred:
+        return {"error": "Unknown credential"}
 
     expected_challenge = challenges.get(username)
-    user = users.get(username)
-
-    if not user or not user["credentials"]:
-        return {"error": "No credentials"}
-
-    cred = user["credentials"][0]
 
     verification = verify_authentication_response(
         credential=req.dict(),
@@ -221,11 +234,10 @@ def home():
     user_list = []
 
     for username, user in users.items():
-        for cred in user.get("credentials", []):
-            user_list.append({
-                "username": username,
-                "credential_id": b64url(cred["credential_id"])
-            })
+        user_list.append({
+            "username": username,
+            "credential_id": list(map(b64url, user.get("credentials", [])))
+        })
 
     revision = os.getenv("RENDER_GIT_COMMIT", "unknown")
 
@@ -272,3 +284,8 @@ def assetlinks():
 
 def b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def b64url_decode(data: str) -> bytes:
+    padding = '=' * (-len(data) % 4)
+    return base64.urlsafe_b64decode(data + padding)
