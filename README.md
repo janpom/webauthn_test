@@ -1,5 +1,11 @@
 # webauthn_test
 
+## Setup
+
+Change the "config" part in server.py.
+
+If the server is to be used with an Android app, set ANDROID_APP_SIGN_CERT_FINGERPRINT.
+
 ## Deploy
 
 ```

@@ -16,12 +16,18 @@ app = FastAPI()
 
 # <config>
 RP_ID = "webauthn-test-v9su.onrender.com"
+
+# keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep SHA256
+ANDROID_APP_SIGN_CERT_FINGERPRINT = "F0:91:76:BC:A6:5F:73:3D:1F:82:86:59:F2:CB:0E:B0:58:8F:FF:1B:27:9E:03:D9:39:A7:6C:11:BC:C7:A7:9C"
+# </config>
+
+ENCODED_FINGERPRINT = base64.urlsafe_b64encode(bytes.fromhex(ANDROID_APP_SIGN_CERT_FINGERPRINT.replace(":", ""))).rstrip(b"=").decode()
+EXPECTED_CLIENT_ORIGINS = []
 ORIGIN = f"https://{RP_ID}"
 EXPECTED_CLIENT_ORIGINS = [
     ORIGIN,
-    "android:apk-key-hash:8JF2vKZfcz0fgoZZ8ssOsFiP_xsnngPZOadsEbzHp5w",
+    f"android:apk-key-hash:{ENCODED_FINGERPRINT}",
 ]
-# </config>
 
 users = {}
 challenges = {}
@@ -254,7 +260,7 @@ def assetlinks():
                 "namespace": "android_app",
                 "package_name": "com.nexusgroup.personal.sample",
                 "sha256_cert_fingerprints": [
-                    "F0:91:76:BC:A6:5F:73:3D:1F:82:86:59:F2:CB:0E:B0:58:8F:FF:1B:27:9E:03:D9:39:A7:6C:11:BC:C7:A7:9C"
+                    ANDROID_APP_SIGN_CERT_FINGERPRINT
                 ]
             }
         }
