@@ -22,7 +22,6 @@ ANDROID_APP_SIGN_CERT_FINGERPRINT = "F0:91:76:BC:A6:5F:73:3D:1F:82:86:59:F2:CB:0
 # </config>
 
 ENCODED_FINGERPRINT = base64.urlsafe_b64encode(bytes.fromhex(ANDROID_APP_SIGN_CERT_FINGERPRINT.replace(":", ""))).rstrip(b"=").decode()
-EXPECTED_CLIENT_ORIGINS = []
 ORIGIN = f"https://{RP_ID}"
 EXPECTED_CLIENT_ORIGINS = [
     ORIGIN,
