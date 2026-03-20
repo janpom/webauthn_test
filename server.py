@@ -272,6 +272,9 @@ def assetlinks():
 @log_endpoint("/.well-known/apple-app-site-association")
 def apple_app_site_association():
     return JSONResponse({
+        "applinks": {
+            "apps": []
+        },
         "webcredentials": {
             "apps": [IOS_APP_ID]
         }
