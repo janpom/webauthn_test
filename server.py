@@ -14,29 +14,21 @@ from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
 app = FastAPI()
 
-# ---------------------------
-# CONFIG (IMPORTANT)
-# ---------------------------
-# 👉 CHANGE THIS to your machine IP
+# <config>
 RP_ID = "webauthn-test-v9su.onrender.com"
 ORIGIN = f"https://{RP_ID}"
 EXPECTED_CLIENT_ORIGINS = [
     ORIGIN,
     "android:apk-key-hash:8JF2vKZfcz0fgoZZ8ssOsFiP_xsnngPZOadsEbzHp5w",
 ]
+# </config>
 
-# ---------------------------
-# In-memory storage (PoC only)
-# ---------------------------
 users = {}
 challenges = {}
 
 LOG_ENTRIES = []
 MAX_LOG_ENTRIES = 200
 
-# ---------------------------
-# Models
-# ---------------------------
 class UsernameRequest(BaseModel):
     username: str
 
@@ -96,9 +88,6 @@ def log_endpoint(endpoint_name: str):
     return decorator
 
 
-# ---------------------------
-# REGISTER OPTIONS
-# ---------------------------
 @app.post("/register/options")
 @log_endpoint("/register/options")
 def register_options(req: UsernameRequest):
@@ -121,13 +110,9 @@ def register_options(req: UsernameRequest):
 
     challenges[username] = options.challenge
 
-    # ✅ IMPORTANT: convert to JSON-safe format
     return json.loads(options_to_json(options))
 
 
-# ---------------------------
-# REGISTER VERIFY
-# ---------------------------
 @app.post("/register/verify")
 @log_endpoint("/register/verify")
 def register_verify(req: CredentialResponse):
@@ -163,9 +148,6 @@ def register_verify(req: CredentialResponse):
     return {"status": "ok"}
 
 
-# ---------------------------
-# AUTH OPTIONS
-# ---------------------------
 @app.post("/auth/options")
 @log_endpoint("/auth/options")
 def auth_options(req: UsernameRequest):
@@ -190,9 +172,6 @@ def auth_options(req: UsernameRequest):
     return json.loads(options_to_json(options))
 
 
-# ---------------------------
-# AUTH VERIFY
-# ---------------------------
 @app.post("/auth/verify")
 @log_endpoint("/auth/verify")
 def auth_verify(req: CredentialResponse):
